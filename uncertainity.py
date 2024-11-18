@@ -152,6 +152,9 @@ def optimize_statement(statement: str) -> str:
 
     **Explanation of Changes**: Added specific time ("September 15th at 10 AM GMT") and location ("Geneva, Switzerland") to make the statement clearer and more actionable. Clarified "international partners" by specifying involved regions.
     """
+    
+    # ask the time by model, and location, and any ambiguity in the statement
+    
     # - Include 1-2 sentences at the end explaining what was changed or added to make it more clear and complete.
 
     response = openai.chat.completions.create(
@@ -170,9 +173,7 @@ def uncertainty(statement: str, response: List[Dict]) -> float:
         "On a scale of 0-100, output your confidence that the information found in the overall statement is accurate and comprehensive. Only give the output.\nStatement: {statement}\nResponse: {response}",
         """Based on the following information, output your confidence, on a scale of 0-100 where 0 is highly uncertain and 100 is fully certain,  that the result of the search query made was accurate and comprehensive with regard to the topic queried. Don't write an explanation, only give the number.
 The search query was made as one part of a process to evaluate the veracity of this statement: {statement}
-
 The analysis of the search results by the searching agent was: {response}
-
 Note that your score should reflect confidence in the accuracy and comprehensiveness with regard to the topic of the search query. In other words, the extent to which it found the information it sought. It should not reflect whether it comprehensively answered everything about the statement, because there can be other search queries and other analysis taking place too."""
     ]
     scores = []

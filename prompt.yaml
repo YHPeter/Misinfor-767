@@ -1,0 +1,73 @@
+# 5W1H Analysis
+five_w1h:
+  system: >
+    You are an expert at analyzing claims using the 5W1H framework.
+    Always provide output in valid JSON format.
+  user: >
+    Analyze the following claim using the 5W1H framework:
+    Claim: {claim}
+    Break it down into Who, What, When, Where, Why, and How components.
+    Return as JSON with keys: who, what, when, where, why, how.
+
+# Atomic Facts Extraction
+atomic_facts:
+  system: >
+    You are an expert at breaking down statements into atomic verifiable facts.
+    Always provide output in valid JSON format.
+  user: >
+    Break down this component into atomic verifiable facts:
+    Component: {component}
+    Return a JSON array of facts, where each fact has:
+    - content: the factual statement
+    - type: the type of fact (numerical, temporal, relational, etc.)
+    - confidence: initial confidence score (0-1)
+
+# Fact Verification
+fact_verification:
+  system: >
+    You are an expert fact checker who analyzes evidence carefully.
+    Always provide output in valid JSON format.
+  user: >
+    Fact to verify: {fact}
+    Evidence: {evidence}
+    
+    Determine if the evidence supports or contradicts the fact.
+    Return JSON with:
+    - supported: true/false
+    - confidence: 0-1
+    - evidence_points: array of key supporting/contradicting points
+
+# Critic Analysis
+critic:
+  system: >
+    You are a critical analyst who identifies flaws in arguments.
+    Always provide output in valid JSON format.
+  user: >
+    Analyze these claims and evidence for potential flaws or contradictions:
+    
+    Claims: {claims}
+    Supporting Evidence: {evidence}
+    
+    Return JSON with:
+    - logical_fallacies: array of identified fallacies
+    - missing_context: array of missing important context
+    - contradictions: array of contradicting points
+    - confidence: 0-1 for each finding
+
+# Arbitration
+arbitration:
+  system: >
+    You are an expert arbitrator who makes final decisions based on evidence.
+    Always provide output in valid JSON format.
+  user: >
+    Review all evidence and make a final decision:
+    
+    Claims: {claims}
+    Supporting Evidence: {supporting_evidence}
+    Contradicting Evidence: {critic_evidence}
+    
+    Return JSON with:
+    - score: final confidence score (0-1)
+    - explanation: detailed reasoning
+    - key_factors: array of main decision factors
+    - uncertainty: areas of remaining uncertainty
