@@ -20,6 +20,15 @@ DEBUG = False
 split = "test"
 assert split in ["train", "val", "test"]
 
+# Helper functions
+
+def clean_text(text):
+    text = re.sub(r"\n+", "\n", text)
+    text = re.sub(r"\t", "", text)
+    text = text.replace("*", "")
+    return text.strip()
+    # return re.sub(r"\s+", " ", text).strip()
+
 
 def google_search(query, result_total=10):
     """Execute Google Custom Search API query."""
@@ -62,7 +71,7 @@ def ddg_search(query: str) -> str:
     )
     return completion.choices[0].message.content
 
-def get_response(context, search_engine="none"):
+def get_response(context, search_engine="none", prefix=""):
     """Get response from OpenAI with optional search capability."""
     
     # main agent
@@ -78,12 +87,12 @@ def get_response(context, search_engine="none"):
         if search_engine == 'ddg':
             context.extend([
                 {"role": "assistant", "content": search_match.group(1) + query},
-                {"role": "user", "content": f"Search result: {ddg_search(query)}"},
+                {"role": "user", "content": f"Search result: {clean_text(ddg_search(query))}"},
             ])
         elif search_engine == 'google':
             context.extend([
                 {"role": "assistant", "content": search_match.group(1) + query},
-                {"role": "user", "content": f"Search result: {google_search(query)}"},
+                {"role": "user", "content": f"Search result: {clean_text(google_search(query))}"},
             ])
         elif search_engine == 'none':
             # search_result = "Search engine is disabled."
@@ -94,7 +103,7 @@ def get_response(context, search_engine="none"):
         context.append({"role": "assistant", "content": message})
 
     if DEBUG:
-        print(context[-1]["content"])
+        print(f"\033[94m{prefix}\033[0m", f"\033[92m{context[-1]['content']}\033[0m")
 
     return context, message
 
@@ -105,7 +114,7 @@ def evaluate_factuality(statement, search_engine):
     search_context = ""
     
     # Get enriched questions and gather evidence
-    context, questions = get_response(context, search_engine)
+    context, questions = get_response(context, search_engine, prefix="Enrichment: ")
     questions_dict = json.loads(re.sub(r"```\w*\n|```", "", questions).strip())
     
     for category, questions in questions_dict.items():
@@ -113,11 +122,11 @@ def evaluate_factuality(statement, search_engine):
             context, response = get_response([{
                 "role": "user", 
                 "content": f"Answer this question: {statement}, {question}"
-            }])
+            }], search_engine, prefix=f"{category}: ")
             search_context += " " + response
 
     factuality_query = PromptManager.get_factuality_analysis_prompt(statement, search_context)
-    context, evaluation = get_response([{"role": "user", "content": factuality_query}])
+    context, evaluation = get_response([{"role": "user", "content": factuality_query}], prefix="Evaluation: ")
     match = re.search(r'Factuality:\s*(\d+)', evaluation)
     return match.group(1) if match else None
 
@@ -125,7 +134,7 @@ def process_dataset(df, search_engine):
     """Process dataset with parallel execution."""
     
     if DEBUG:
-        return [(evaluate_factuality(row['claim'], search_engine), row['label']) for _, row in df.iterrows()]
+        results = [(evaluate_factuality(row['claim'], search_engine), row['label']) for _, row in df.iterrows()]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(lambda row: (evaluate_factuality(row['claim'], search_engine), row['label']), row) for _, row in df.iterrows()]
@@ -189,7 +198,7 @@ if __name__ == "__main__":
 
     # predictions, labels = main(df)
     if DEBUG:
-        df = df.sample(n=10, random_state=42)
+        df = df.sample(n=5, random_state=42)
 
     predictions, labels = process_dataset(df, search_engine=search_engine)
     print(len(predictions), len(labels))
