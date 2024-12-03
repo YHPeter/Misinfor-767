@@ -135,10 +135,10 @@ def process_dataset(df, search_engine):
     
     if DEBUG:
         results = [(evaluate_factuality(row['claim'], search_engine), row['label']) for _, row in df.iterrows()]
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(lambda row: (evaluate_factuality(row['claim'], search_engine), row['label']), row) for _, row in df.iterrows()]
-        results = [future.result() for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures))]
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(lambda row: (evaluate_factuality(row['claim'], search_engine), row['label']), row) for _, row in df.iterrows()]
+            results = [future.result() for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures))]
 
     predictions, labels = zip(*[(int(p), l) for p, l in results if p in ['0', '1']])
     return list(predictions), list(labels)
