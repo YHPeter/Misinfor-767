@@ -109,6 +109,10 @@ def get_response(context, search_engine="none", prefix=""):
 
 def evaluate_factuality(statement, search_engine):
     """Evaluate factuality of a statement using enriched context."""
+    
+    if DEBUG:
+        print(f"Statement: \033[91m{statement}\033[0m")
+
     enrich_query = PromptManager.get_enrichment_prompt(statement)
     context = [{"role": "user", "content": enrich_query}]
     search_context = ""
@@ -122,12 +126,16 @@ def evaluate_factuality(statement, search_engine):
             context, response = get_response([{
                 "role": "user", 
                 "content": f"Answer this question: {statement}, {question}"
-            }], search_engine, prefix=f"{category}: ")
+            }], search_engine, prefix=f"{category.capitalize()}: ")
             search_context += " " + response
 
     factuality_query = PromptManager.get_factuality_analysis_prompt(statement, search_context)
     context, evaluation = get_response([{"role": "user", "content": factuality_query}], prefix="Evaluation: ")
     match = re.search(r'Factuality:\s*(\d+)', evaluation)
+    if DEBUG:
+        # change to red color
+        print(f"\033[91m{statement}\033[0m", f"\033[92m{evaluation}\033[0m")
+
     return match.group(1) if match else None
 
 def process_dataset(df, search_engine):
